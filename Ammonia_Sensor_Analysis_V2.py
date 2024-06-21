@@ -142,10 +142,11 @@ n_cycle = int(Period_cycle * 750 // sample_points) // 2
 min_temp = time_stamp_tempsweep[T_laser.index(min(T_laser[0:100]))]
 start_cycle = time_stamp_arduino.index(closest(time_stamp_arduino, min_temp))
 print("Start Point of Cycle:", start_cycle)
-for i in range(len(time_stamp_arduino) // n_cycle - 100):
+for i in range(len(time_stamp_arduino) // n_cycle ):
     p1 = Pavg[start_cycle + i * n_cycle:start_cycle + i * n_cycle + n_cycle]
     t1 = time_stamp_arduino[start_cycle + i * n_cycle:start_cycle + i * n_cycle + n_cycle]
-    print(p1)
+    if len(p1)<5:
+        break
     P.append(max(p1)-min(p1))
     t_new.append((max(t1)+min(t1))/2)
     peaks.append(max(p1))
