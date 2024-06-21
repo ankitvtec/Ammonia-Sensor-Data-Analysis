@@ -73,13 +73,13 @@ def phase1(list1):
 
 
 folder = 'D:\Ankit\Projects\Ammonia Sensor\MZi Setup\Measurements'  # Folder Directory
-sweep_filename = '\PumpModulation2024-06-07_19-13-27.csv'  # File name##
-data_filename = '\Aurduino_2024_06_07_191309.csv'  #####
+sweep_filename = '\PumpModulation2024-06-17_22-31-55.csv'  # File name##
+data_filename = '\Aurduino_2024_06_17_223201.csv'  #####
 
 data = open(folder + sweep_filename, 'r').readlines()
 arduino_data = open(folder + data_filename, 'r').readlines()
 start_point = 100  # Choose starting point of plot
-start_point_arduino = 50000
+start_point_arduino = 5
 n_points = -1  # Choose End point of plot ,-1 means whole data
 n_points_arduino = -1
 #
@@ -152,15 +152,15 @@ peak=np.where(df['peak']==True,df['y'],np.nan)
 vall=np.where(df['valley']==True,df['y'],np.nan)
 
 
-min_temp = time_stamp_tempsweep[T_laser.index(min(T_laser[0:100]))]
-max_temp=time_stamp_tempsweep[T_laser.index(max(T_laser[0:100]))]
+min_temp = time_stamp_tempsweep[T_laser.index(min(T_laser[0:30]))]
+max_temp=time_stamp_tempsweep[T_laser.index(max(T_laser[0:30]))]
 t_min=closest(time_stamp_arduino, min_temp)
 t_max=closest(time_stamp_arduino, max_temp)
 
 start_cycle = time_stamp_arduino.index(t_min)
 end_cycle=time_stamp_arduino.index(t_max)
 
-Period_cycle=2*(t_max-t_min)
+Period_cycle=abs(2*(t_max-t_min))
 total_points=2*(end_cycle-start_cycle)
 print("Start Point of Cycle:", start_cycle)
 print('Total duration of 1 sweep: ',Period_cycle)
@@ -174,7 +174,7 @@ for i in range(len(time_stamp_arduino) // n_cycle ):
     if len(p1)<5:
         break
     P.append(max(p1)-min(p1))
-    t_new.append(max(t1))
+    t_new.append(min(t1))
     peaks.append(max(p1))
     valleys.append(min(p1))
 
