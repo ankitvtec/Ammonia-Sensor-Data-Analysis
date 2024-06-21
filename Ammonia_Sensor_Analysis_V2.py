@@ -4,12 +4,17 @@ import scipy.stats as sci
 import statistics as stats
 from numpy import polyfit, polyval, interp, abs, gradient
 from scipy.fft import fft, fftfreq, rfft, rfftfreq
+from scipy.signal import find_peaks
 import numpy as np
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 from sympy import symbols, diff
 import math
 from scipy.fft import irfft
+from collections import Counter
+from operator import itemgetter
+from findpeaks import findpeaks
+import pandas as pd
 
 
 
@@ -68,13 +73,13 @@ def phase1(list1):
 
 
 folder = 'D:\Ankit\Projects\Ammonia Sensor\MZi Setup\Measurements'  # Folder Directory
-sweep_filename = '\PumpModulation2024-06-19_16-15-46.csv'  # File name##
-data_filename = '\Aurduino_2024_06_19_161553.csv'  #####
+sweep_filename = '\PumpModulation2024-06-07_19-13-27.csv'  # File name##
+data_filename = '\Aurduino_2024_06_07_191309.csv'  #####
 
 data = open(folder + sweep_filename, 'r').readlines()
 arduino_data = open(folder + data_filename, 'r').readlines()
-start_point = 1  # Choose starting point of plot
-start_point_arduino = 5
+start_point = 100  # Choose starting point of plot
+start_point_arduino = 50000
 n_points = -1  # Choose End point of plot ,-1 means whole data
 n_points_arduino = -1
 #
@@ -137,30 +142,53 @@ t_step = (time_stamp_arduino[10] - time_stamp_arduino[1]) / 9
 t_new = []
 P = []
 peaks=[]
-Period_cycle=20.5 # Seconds, need to be very accurate
-n_cycle = int(Period_cycle * 750 // sample_points) // 2
+valleys=[]
+
+fp=findpeaks(lookahead=8)
+results=fp.fit(Pavg)
+# fp.plot()
+df=pd.DataFrame(results['df'])
+peak=np.where(df['peak']==True,df['y'],np.nan)
+vall=np.where(df['valley']==True,df['y'],np.nan)
+
+
 min_temp = time_stamp_tempsweep[T_laser.index(min(T_laser[0:100]))]
-start_cycle = time_stamp_arduino.index(closest(time_stamp_arduino, min_temp))
+max_temp=time_stamp_tempsweep[T_laser.index(max(T_laser[0:100]))]
+t_min=closest(time_stamp_arduino, min_temp)
+t_max=closest(time_stamp_arduino, max_temp)
+
+start_cycle = time_stamp_arduino.index(t_min)
+end_cycle=time_stamp_arduino.index(t_max)
+
+Period_cycle=2*(t_max-t_min)
+total_points=2*(end_cycle-start_cycle)
 print("Start Point of Cycle:", start_cycle)
+print('Total duration of 1 sweep: ',Period_cycle)
+n_cycle = int(Period_cycle * 750 // sample_points)
+print('No of points in 1 cycle: ',n_cycle)
+
+
 for i in range(len(time_stamp_arduino) // n_cycle ):
     p1 = Pavg[start_cycle + i * n_cycle:start_cycle + i * n_cycle + n_cycle]
     t1 = time_stamp_arduino[start_cycle + i * n_cycle:start_cycle + i * n_cycle + n_cycle]
     if len(p1)<5:
         break
     P.append(max(p1)-min(p1))
-    t_new.append((max(t1)+min(t1))/2)
+    t_new.append(max(t1))
     peaks.append(max(p1))
+    valleys.append(min(p1))
+
 
 
 # plt.figure(10)
 # plt.plot(t_new,P,'-o')
 fig, ax = plt.subplots(2, 1, figsize=(16, 11))
-ax[0].plot(t_new, peaks, '-o')
+ax[0].plot(t_new, P, '-o')
 ax[0].set_title('Sensor Output over time')
 ax[0].set_xlabel('Timestamp)')
 ax[0].set_ylabel('Difference voltage between Min & Max (mV)')
 ax[0].grid()
-ax[1].plot(time_stamp_arduino, Pavg,t_new,peaks,'o')
+ax[1].plot(time_stamp_arduino, Pavg,t_new,peaks,'o',t_new,valleys,'*')
 ax[1].set_title('ADC out over time')
 ax[1].set_xlabel('Timestamp')
 ax[1].set_ylabel('Voltage(mV)')
@@ -228,6 +256,9 @@ ax3.set_xlabel('Time')
 ax3.set_ylabel('Sensor Out (mV)', color=color)
 # ax3.set_ylim(-1.3,1)
 ax3.plot(Time_arduino, Pavg, color=color)
+ax3.plot(Time_arduino, peak, 'o')
+ax3.plot(Time_arduino, vall, '*')
+# ax3.plot(t_new,peaks,'o')
 ax3.tick_params(axis='y', labelcolor=color)
 # ax3.text(min(time_stamp_arduino) + 10, min(Pavg)-1, f"Start time: {start_time}\nEnd time: {end_time}, Sampling Time: {t_step} s")
 #
